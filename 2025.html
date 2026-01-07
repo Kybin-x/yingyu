@@ -2,69 +2,92 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025年广东高职高考英语智能训练系统 (增强版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2025年广东高职高考英语智能训练系统 (响应式版)</title>
     <style>
         :root {
-            --primary-color: #4a90e2;       /* 主色调：柔和蓝 */
-            --secondary-color: #2c3e50;     /* 侧边栏深色 */
-            --accent-color: #f39c12;        /* 强调色：橙黄 */
-            --success-color: #27ae60;       /* 成功绿 */
-            --error-color: #e74c3c;         /* 错误红 */
-            --bg-color: #f4f7f6;            /* 背景灰 */
+            --primary-color: #4a90e2;
+            --secondary-color: #2c3e50;
+            --accent-color: #f39c12;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
             --sidebar-width: 260px;
+            --header-height: 60px; /* 移动端顶部高度 */
         }
 
         body {
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
             background-color: var(--bg-color);
             color: #333;
             display: flex;
             height: 100vh;
             overflow: hidden;
-            font-size: 18px; /* 1) 调整字体大小，整体变大 */
+            font-size: 16px; /* 移动端基础字号调整 */
             line-height: 1.6;
         }
 
-        /* 登录遮罩 */
+        /* --- 移动端汉堡菜单按钮 --- */
+        .mobile-menu-btn {
+            display: none; /* 桌面端隐藏 */
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            backdrop-filter: blur(2px);
+        }
+
+        /* --- 登录遮罩 (响应式) --- */
         #login-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(44, 62, 80, 0.98);
             z-index: 9999;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px; 
+            box-sizing: border-box;
         }
 
         .login-box {
             background: white;
-            padding: 50px;
+            padding: 40px 30px;
             border-radius: 15px;
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
             text-align: center;
             box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
 
-        .login-box h2 { margin-top: 0; color: var(--secondary-color); font-size: 24px; }
-
+        .login-box h2 { margin-top: 0; color: var(--secondary-color); font-size: 1.5rem; }
         .login-box input {
             width: 100%;
-            padding: 15px;
-            margin: 15px 0;
+            padding: 12px;
+            margin: 10px 0;
             border: 2px solid #eee;
             border-radius: 8px;
             box-sizing: border-box;
-            font-size: 18px;
-            transition: border-color 0.3s;
+            font-size: 16px;
         }
-        .login-box input:focus { border-color: var(--primary-color); outline: none; }
 
-        /* 侧边栏 */
+        /* --- 侧边栏 (响应式) --- */
         .sidebar {
             width: var(--sidebar-width);
             background-color: var(--secondary-color);
@@ -72,7 +95,8 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-            z-index: 10;
+            z-index: 160;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .user-info-display {
@@ -80,172 +104,150 @@
             background: rgba(0,0,0,0.2);
             border-bottom: 1px solid #3e5871;
         }
-        .user-info-display h3 { margin: 0; font-size: 20px; }
-        .user-info-display p { margin: 10px 0 0; font-size: 14px; opacity: 0.8; }
+        /* 移动端侧边栏顶部留白，避开关闭按钮 */
+        .sidebar-header-mobile { display: none; } 
 
         .menu-item {
-            padding: 20px 25px;
+            padding: 18px 25px;
             cursor: pointer;
-            transition: all 0.2s;
-            border-left: 6px solid transparent;
+            border-left: 5px solid transparent;
             font-size: 16px;
         }
-        .menu-item:hover { background-color: #34495e; }
         .menu-item.active { 
             background-color: #2980b9; 
             border-left-color: var(--accent-color);
             font-weight: bold;
         }
 
-        /* 主内容区 */
+        /* --- 主内容区 --- */
         .main-content {
             flex: 1;
             padding: 40px;
             overflow-y: auto;
             position: relative;
             scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* iOS顺滑滚动 */
         }
 
-        /* 题目卡片 */
+        /* --- 题目卡片 --- */
         .question-card {
             background: white;
-            padding: 30px;
-            margin-bottom: 25px;
+            padding: 25px;
+            margin-bottom: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             border: 1px solid #eee;
-            position: relative;
         }
 
-        .q-title { 
-            font-weight: 600; 
-            margin-bottom: 20px; 
-            font-size: 1.05em; 
-            color: #2c3e50;
-        }
+        .q-title { font-weight: 600; margin-bottom: 15px; font-size: 1.1em; color: #2c3e50; word-wrap: break-word; }
 
-        /* 选项样式 */
-        .options-group { display: grid; gap: 15px; }
+        /* --- 选项样式 --- */
+        .options-group { display: grid; gap: 12px; }
         .option-btn {
             text-align: left;
-            padding: 15px 20px;
+            padding: 12px 15px;
             background: #f9fbfd;
-            border: 2px solid #e9ecef;
+            border: 1px solid #e9ecef;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.2s;
             color: #555;
+            /* 防止移动端点击高亮背景色 */
+            -webkit-tap-highlight-color: transparent; 
         }
-        .option-btn:hover:not(:disabled) { background: #eef2f7; border-color: #dbe2e8; }
-        
-        .option-btn.correct { 
-            background-color: #d4edda; 
-            border-color: var(--success-color); 
-            color: #155724; 
-            font-weight: bold;
-        }
-        .option-btn.wrong { 
-            background-color: #f8d7da; 
-            border-color: var(--error-color); 
-            color: #721c24; 
-        }
+        .option-btn:active { background: #eef2f7; }
+        .option-btn.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; }
+        .option-btn.wrong { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; }
 
-        /* 分屏布局 */
+        /* --- 分屏布局 (桌面端默认) --- */
         .split-layout {
             display: flex;
-            gap: 40px;
+            gap: 30px;
             align-items: flex-start;
-            height: calc(100vh - 100px); /* 限制高度以便内部滚动 */
+            height: calc(100vh - 120px); /* 桌面端固定高度 */
         }
         .passage-panel {
             flex: 1;
             background: #fff;
-            padding: 25px;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             overflow-y: auto;
             height: 100%;
             border-top: 5px solid var(--primary-color);
-            line-height: 1.8;
-            font-size: 17px;
+            font-size: 1.05em;
         }
         .questions-panel { 
             flex: 1; 
             overflow-y: auto; 
             height: 100%;
-            padding-right: 10px; 
+            padding-right: 5px; 
         }
 
-        /* 3) 翻译折叠功能 */
+        /* --- 翻译与输入 --- */
         .trans-toggle-btn {
             display: inline-block;
             margin-top: 8px;
             padding: 4px 10px;
-            font-size: 14px;
+            font-size: 0.9em;
             color: var(--primary-color);
             background: rgba(74, 144, 226, 0.1);
             border-radius: 4px;
             cursor: pointer;
-            user-select: none;
         }
-        .trans-toggle-btn:hover { background: rgba(74, 144, 226, 0.2); }
         
         .para-trans {
-            display: none; /* 默认隐藏 */
+            display: none;
             margin-top: 10px;
-            padding: 15px;
+            padding: 12px;
             background-color: #fff9e6;
             border-left: 4px solid var(--accent-color);
-            border-radius: 0 4px 4px 0;
-            color: #5d5d5d;
             font-size: 0.95em;
+            color: #555;
+            border-radius: 0 4px 4px 0;
         }
 
-        /* 嵌入式输入框 */
         .inline-input {
             border: none;
             border-bottom: 2px solid #95a5a6;
-            width: 140px;
+            width: 120px;
             text-align: center;
-            font-size: 18px;
-            padding: 5px;
+            font-size: 1.1em;
+            padding: 0 5px;
             background: #f4f6f9;
             color: #333;
-            margin: 0 5px;
+            margin: 0 3px;
             border-radius: 4px 4px 0 0;
-            transition: all 0.3s;
+            max-width: 100%;
         }
         .inline-input:focus { outline: none; border-bottom-color: var(--primary-color); background: #e8f0fe; }
         .inline-input.correct { border-bottom-color: var(--success-color); color: var(--success-color); font-weight: bold; background: white;}
         .inline-input.wrong { border-bottom-color: var(--error-color); color: var(--error-color); background: #fff0f0;}
 
-        /* 解析区域 */
+        /* --- 解析与按钮 --- */
         .analysis-box {
-            margin-top: 20px;
-            padding: 20px;
+            margin-top: 15px;
+            padding: 15px;
             background: #f1f9ff;
-            border-left: 5px solid var(--primary-color);
-            border-radius: 0 8px 8px 0;
+            border-left: 4px solid var(--primary-color);
             display: none;
-            font-size: 16px;
+            font-size: 0.95em;
             color: #444;
+            border-radius: 0 6px 6px 0;
         }
-        .analysis-label { font-weight: bold; color: var(--secondary-color); margin-right: 5px; }
+        .analysis-label { font-weight: bold; color: var(--secondary-color); }
 
         .check-btn {
             background: var(--secondary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            font-size: 0.95em;
         }
-        .check-btn:hover { background: #34495e; }
 
-        /* 提交按钮 */
+        /* --- 提交按钮 --- */
         .submit-all-btn {
             position: fixed;
             bottom: 30px;
@@ -253,60 +255,143 @@
             background: var(--success-color);
             color: white;
             border: none;
-            padding: 16px 40px;
+            padding: 15px 30px;
             border-radius: 50px;
-            font-size: 20px;
-            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4);
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
             cursor: pointer;
             z-index: 100;
-            transition: transform 0.2s;
         }
-        .submit-all-btn:hover { transform: scale(1.05); }
 
-        /* 结果弹窗 */
+        /* --- 结果弹窗 --- */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 2000;
-            backdrop-filter: blur(5px);
+            padding: 20px;
+            box-sizing: border-box;
         }
         .result-card {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 15px;
             text-align: center;
-            width: 450px;
-            animation: slideUp 0.4s ease;
+            width: 100%;
+            max-width: 400px;
         }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .score-num { font-size: 60px; color: var(--primary-color); font-weight: bold; display: block; margin: 20px 0; }
-        .result-btns { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+        .score-num { font-size: 50px; color: var(--primary-color); font-weight: bold; display: block; margin: 15px 0; }
+        .result-btns { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
         .res-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; }
         .btn-retry { background: var(--accent-color); }
         .btn-restart { background: var(--secondary-color); }
+        
+        textarea { width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; font-size: 16px; font-family: inherit; box-sizing: border-box; }
 
-        textarea { width: 100%; height: 150px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-top: 15px; font-size: 16px; font-family: inherit; }
+        /* =========================================
+           移动端响应式适配 (Media Queries)
+           ========================================= */
+        @media (max-width: 768px) {
+            body { font-size: 15px; } /* 字号微调 */
+            
+            /* 1. 侧边栏改为抽屉式 */
+            .mobile-menu-btn { display: block; }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%; /* 默认隐藏在左侧 */
+                height: 100%;
+                width: 75%; /* 占屏幕宽度的 75% */
+                max-width: 300px;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            }
+            .sidebar.active { transform: translateX(100%); left: -100%; } /* 激活时移入视口 (逻辑修正：left -100% -> translateX 100% = 0) */
+            .sidebar.active-mobile { left: 0; transform: none; } /* 简化写法 */
 
+            .sidebar-header-mobile {
+                display: flex;
+                justify-content: flex-end;
+                padding: 10px;
+            }
+            .close-menu-btn {
+                background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;
+            }
+
+            /* 2. 主内容区适配 */
+            .main-content {
+                padding: 60px 15px 80px 15px; /* 顶部留出按钮空间，底部留出提交按钮空间 */
+                width: 100%;
+            }
+
+            /* 3. 分屏布局转为上下堆叠 */
+            .split-layout {
+                flex-direction: column;
+                height: auto; /* 高度自适应 */
+                gap: 20px;
+            }
+            
+            .passage-panel {
+                width: 100%;
+                height: auto;
+                max-height: 40vh; /* 限制文章最大高度，避免占据全屏 */
+                overflow-y: auto;
+                border-top: none;
+                border-left: 4px solid var(--primary-color);
+                box-sizing: border-box;
+                padding: 15px;
+            }
+            
+            .questions-panel {
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                padding-right: 0;
+            }
+
+            /* 4. 输入框适配 */
+            .inline-input {
+                width: 80px; /* 缩小输入框 */
+                font-size: 1em;
+            }
+            
+            /* 完成句子题的长输入框 */
+            .question-card input[style*="width:250px"] {
+                width: 100% !important; /* 强制全宽 */
+            }
+
+            /* 5. 提交按钮适配 */
+            .submit-all-btn {
+                right: 20px;
+                bottom: 20px;
+                padding: 12px 25px;
+                font-size: 16px;
+                opacity: 0.9;
+            }
+        }
     </style>
 </head>
 <body>
 
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
+
+<button class="mobile-menu-btn" onclick="toggleSidebar()">☰ 题型目录</button>
+
 <div id="login-overlay">
     <div class="login-box">
-        <h2>🎓 2025 高职高考英语特训</h2>
+        <h2>🎓 2025 高职高考英语</h2>
         <input type="text" id="u-class" placeholder="请输入班级">
         <input type="text" id="u-id" placeholder="请输入学号">
         <input type="text" id="u-name" placeholder="请输入姓名">
-        <button onclick="login()" class="check-btn" style="width:100%; margin-top:20px; background:var(--primary-color);">开始答题</button>
+        <button onclick="login()" class="check-btn" style="width:100%; margin-top:20px; background:var(--primary-color); font-size:16px; padding:12px;">开始答题</button>
     </div>
 </div>
 
 <div class="sidebar" id="sidebar" style="display:none;">
+    <div class="sidebar-header-mobile">
+        <button class="close-menu-btn" onclick="toggleSidebar()">×</button>
+    </div>
     <div class="user-info-display">
         <h3 id="disp-name">考生</h3>
         <p id="disp-id">--</p>
@@ -334,8 +419,7 @@
 </div>
 
 <script>
-    // --- 题库数据 (增强解析版) ---
-    // 2) 答案解析显示完整的中文翻译（已在 exp 字段中增强）
+    // --- 题库数据 (内容完全一致) ---
     const examData = [
         {
             id: 'part1',
@@ -343,7 +427,7 @@
             type: 'choice',
             desc: "阅读下列简短对话，从A、B、C、D中选出最佳答案。",
             questions: [
-                { id: 1, q: "Hello! My name is Lily.<br>- Hi, Lily. I'm Tom. ______", options: ["A. Come on.", "B. My pleasure.", "C. Go ahead.", "D. Glad to meet you."], ans: "D", exp: "<br><span class='analysis-label'>【句意】</span> -你好！我叫莉莉。<br>-嗨，莉莉。我是汤姆。很高兴认识你。<br><span class='analysis-label'>【解析】</span> 初次见面打招呼常用 'Glad to meet you' (很高兴认识你)。" },
+                { id: 1, q: "Hello! My name is Lily.<br>- Hi, Lily. I'm Tom. ______", options: ["A. Come on.", "B. My pleasure.", "C. Go ahead.", "D. Glad to meet you."], ans: "D", exp: "<br><span class='analysis-label'>【句意】</span> -你好！我叫莉莉。<br>-嗨，莉莉。我是汤姆。很高兴认识你。<br><span class='analysis-label'>【解析】</span> 初次见面打招呼常用 'Glad to meet you'。" },
                 { id: 2, q: "Can you believe it? I've passed the exam.<br>- ______ All your efforts paid off.", options: ["A. Congratulations!", "B. You're right.", "C. Behave yourself.", "D. Take your time."], ans: "A", exp: "<br><span class='analysis-label'>【句意】</span> -你敢信吗？我通过了考试。<br>-祝贺你！你所有的努力都得到了回报。<br><span class='analysis-label'>【解析】</span> 听到好消息应表示祝贺，A选项意为“祝贺！”。" },
                 { id: 3, q: "What a cold day! Let's get some hot drink.<br>- ______ What about the cafe around the corner?", options: ["A. Funny.", "B. Sure.", "C. No thanks, please.", "D. Don't worry."], ans: "B", exp: "<br><span class='analysis-label'>【句意】</span> -多冷的天啊！我们去喝点热饮吧。<br>-当然好啊。街角的咖啡馆怎么样？<br><span class='analysis-label'>【解析】</span> 同意对方提议，用 'Sure' (当然)。" },
                 { id: 4, q: "I want to try painting, but I don't have the talent.<br>- ______ It's all about having fun.", options: ["A. Not at all.", "B. Cheers.", "C. Just give it a try.", "D. You're kidding."], ans: "C", exp: "<br><span class='analysis-label'>【句意】</span> -我想尝试画画，但我没有天赋。<br>-就试一试吧。这主要是为了好玩。<br><span class='analysis-label'>【解析】</span> 鼓励对方尝试，C选项 'Just give it a try' (试一试) 符合语境。" },
@@ -370,7 +454,7 @@
         },
         {
             id: 'part3',
-            title: "III. 完形填空 (分屏)",
+            title: "III. 完形填空",
             type: 'split_choice',
             paragraphs: [
                 { en: "One day, Lucy took a late-night flight to Beijing. The flight was unexpectedly full. As the last <b>[16]</b> to board the plane, Lucy had to leave her bag in an area away from her.", cn: "一天，露西乘坐深夜航班飞往北京。航班出乎意料地满了。作为最后一个登机的<b>[16]乘客</b>，露西不得不把包放在离她很远的地方。" },
@@ -400,7 +484,7 @@
         },
         {
             id: 'part5',
-            title: "V. 语法填空 (分屏+输入)",
+            title: "V. 语法填空",
             type: 'split_input',
             desc: "阅读下面短文，在空格处填入一个适当的词或用括号中词语的正确形式填空。<b>请直接点击横线输入，并点击右侧【确认】按钮。</b>",
             paragraphs: [
@@ -450,7 +534,22 @@
     let userResponses = {}; 
     let currentSectionIndex = 0;
     let isRetryMode = false;
-    let correctIds = new Set(); // 记录做对的题目ID
+    let correctIds = new Set(); 
+
+    // --- 响应式菜单逻辑 ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        
+        // 使用 CSS class 控制动画
+        if (sidebar.classList.contains('active-mobile')) {
+            sidebar.classList.remove('active-mobile');
+            overlay.style.display = 'none';
+        } else {
+            sidebar.classList.add('active-mobile');
+            overlay.style.display = 'block';
+        }
+    }
 
     function login() {
         const cls = document.getElementById('u-class').value;
@@ -474,7 +573,11 @@
             const item = document.createElement('div');
             item.className = 'menu-item';
             item.innerHTML = part.title;
-            item.onclick = () => showSection(index);
+            item.onclick = () => {
+                showSection(index);
+                // 移动端点击菜单后自动关闭侧边栏
+                if(window.innerWidth <= 768) toggleSidebar();
+            };
             container.appendChild(item);
         });
     }
@@ -511,10 +614,9 @@
     // 辅助：检查是否应该显示该题 (错题模式逻辑)
     function shouldRenderQuestion(qid) {
         if (!isRetryMode) return true;
-        return !correctIds.has(qid); // 如果在错题模式下，只显示未做对的
+        return !correctIds.has(qid); 
     }
 
-    // 3) 翻译折叠控制函数
     window.toggleTrans = function(id) {
         const el = document.getElementById(id);
         const btn = document.getElementById('btn-' + id);
@@ -583,7 +685,6 @@
         
         data.paragraphs.forEach((p, idx) => {
             let processedEn = p.en.replace(/\[(\d+)\]\s*______/g, (match, id) => {
-                // 如果错题模式且该题已对，显示文本而非输入框
                 if (isRetryMode && correctIds.has(parseInt(id))) {
                     const ans = data.questions.find(q => q.id == id).ans;
                     return `[${id}] <strong style="color:green; border-bottom:1px solid green;">${ans}</strong>`;
@@ -613,7 +714,7 @@
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong>第 ${q.id} 题</strong>
-                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认答案</button>
+                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认</button>
                 </div>
                 <div class="analysis-box" id="exp-${q.id}">
                     <strong>正确答案：</strong> ${q.ans}<br>
@@ -642,13 +743,12 @@
 
             const card = document.createElement('div');
             card.className = 'question-card';
-            // 4) 允许直接在横线处填写 -> 替换 ______ 为输入框
             const qHtml = q.q.replace('______', `<input type="text" class="inline-input" id="input-${q.id}" style="width:250px" autocomplete="off">`);
             
             card.innerHTML = `
                 <div class="q-title">${qHtml}</div>
                 <div style="margin-top:15px;">
-                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认答案</button>
+                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认</button>
                 </div>
                 <div class="analysis-box" id="exp-${q.id}">
                     <strong>参考答案：</strong> ${q.ans}<br>
@@ -665,7 +765,6 @@
 
     function renderWriting(data, container) {
         data.questions.forEach(q => {
-            // 写作题通常不参与“对错”自动判断，但在错题模式下我们可以始终显示
             const card = document.createElement('div');
             card.className = 'question-card';
             card.innerHTML = `
@@ -691,8 +790,6 @@
         });
     }
 
-    // --- 交互与判分 ---
-
     window.checkChoice = function(btn, id, optStr, ansStr) {
         const parent = btn.parentElement;
         const allBtns = parent.querySelectorAll('button');
@@ -706,8 +803,7 @@
             correctIds.add(id);
         } else {
             btn.classList.add('wrong');
-            correctIds.delete(id); // 确保重练逻辑
-            // 显示正确选项
+            correctIds.delete(id); 
             allBtns.forEach(b => {
                 if(b.innerText.startsWith(ansStr)) b.classList.add('correct');
             });
@@ -733,16 +829,14 @@
     window.checkInput = function(id, correctAns) {
         const input = document.getElementById(`input-${id}`);
         const expDiv = document.getElementById(`exp-${id}`);
-        if(!input) return; // 错题模式下可能不存在
+        if(!input) return; 
         const userVal = input.value.trim();
         
         if (!userVal) return alert("请先填写答案！");
         
-        // 宽松匹配逻辑
         const cleanUser = userVal.toLowerCase().replace(/\s+/g, ' ').replace(/[.,?!]/g, '');
         const cleanAns = correctAns.toLowerCase().replace(/\s+/g, ' ').replace(/[.,?!]/g, '');
         
-        // 包含判断或全等
         let isCorrect = (cleanUser === cleanAns) || (cleanAns.includes(cleanUser) && cleanUser.length > 3);
 
         if (isCorrect) {
@@ -783,11 +877,8 @@
         });
     }
 
-    // --- 提交与重练 ---
-
     window.submitExam = function() {
         let score = 0;
-        // 简单计分
         Object.values(userResponses).forEach(r => {
             if (r.type === 'writing') score += 15; 
             else if (r.isCorrect) score += (r.type === 'choice' ? 2 : 3);
@@ -798,11 +889,9 @@
     };
 
     window.retryWrongMode = function() {
-        // 4) 错题重练逻辑
         isRetryMode = true;
         document.getElementById('result-modal').style.display = 'none';
         
-        // 清除错题的作答记录，保留对题的记录
         for (let key in userResponses) {
             if (!userResponses[key].isCorrect && userResponses[key].type !== 'writing') {
                 delete userResponses[key];
@@ -810,9 +899,10 @@
         }
         
         alert("已进入【错题重练】模式，做对的题目已自动隐藏。");
-        showSection(0); // 回到第一题
+        showSection(0); 
         // 刷新菜单状态
-        document.querySelector('.menu-item').click(); 
+        const menuItems = document.querySelectorAll('.menu-item');
+        if(menuItems.length > 0) menuItems[0].click();
     };
 
 </script>
