@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025年广东高职高考英语智能训练系统 (增强版)</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;       /* 主色调：柔和蓝 */
+            --secondary-color: #2c3e50;     /* 侧边栏深色 */
+            --accent-color: #f39c12;        /* 强调色：橙黄 */
+            --success-color: #27ae60;       /* 成功绿 */
+            --error-color: #e74c3c;         /* 错误红 */
+            --bg-color: #f4f7f6;            /* 背景灰 */
+            --sidebar-width: 260px;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: #333;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 18px; /* 1) 调整字体大小，整体变大 */
+            line-height: 1.6;
+        }
+
+        /* 登录遮罩 */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 62, 80, 0.98);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .login-box h2 { margin-top: 0; color: var(--secondary-color); font-size: 24px; }
+
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 18px;
+            transition: border-color 0.3s;
+        }
+        .login-box input:focus { border-color: var(--primary-color); outline: none; }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--secondary-color);
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .user-info-display {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid #3e5871;
+        }
+        .user-info-display h3 { margin: 0; font-size: 20px; }
+        .user-info-display p { margin: 10px 0 0; font-size: 14px; opacity: 0.8; }
+
+        .menu-item {
+            padding: 20px 25px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 6px solid transparent;
+            font-size: 16px;
+        }
+        .menu-item:hover { background-color: #34495e; }
+        .menu-item.active { 
+            background-color: #2980b9; 
+            border-left-color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        /* 题目卡片 */
+        .question-card {
+            background: white;
+            padding: 30px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid #eee;
+            position: relative;
+        }
+
+        .q-title { 
+            font-weight: 600; 
+            margin-bottom: 20px; 
+            font-size: 1.05em; 
+            color: #2c3e50;
+        }
+
+        /* 选项样式 */
+        .options-group { display: grid; gap: 15px; }
+        .option-btn {
+            text-align: left;
+            padding: 15px 20px;
+            background: #f9fbfd;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            color: #555;
+        }
+        .option-btn:hover:not(:disabled) { background: #eef2f7; border-color: #dbe2e8; }
+        
+        .option-btn.correct { 
+            background-color: #d4edda; 
+            border-color: var(--success-color); 
+            color: #155724; 
+            font-weight: bold;
+        }
+        .option-btn.wrong { 
+            background-color: #f8d7da; 
+            border-color: var(--error-color); 
+            color: #721c24; 
+        }
+
+        /* 分屏布局 */
+        .split-layout {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            height: calc(100vh - 100px); /* 限制高度以便内部滚动 */
+        }
+        .passage-panel {
+            flex: 1;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            overflow-y: auto;
+            height: 100%;
+            border-top: 5px solid var(--primary-color);
+            line-height: 1.8;
+            font-size: 17px;
+        }
+        .questions-panel { 
+            flex: 1; 
+            overflow-y: auto; 
+            height: 100%;
+            padding-right: 10px; 
+        }
+
+        /* 3) 翻译折叠功能 */
+        .trans-toggle-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            font-size: 14px;
+            color: var(--primary-color);
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .trans-toggle-btn:hover { background: rgba(74, 144, 226, 0.2); }
+        
+        .para-trans {
+            display: none; /* 默认隐藏 */
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #fff9e6;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 0 4px 4px 0;
+            color: #5d5d5d;
+            font-size: 0.95em;
+        }
+
+        /* 嵌入式输入框 */
+        .inline-input {
+            border: none;
+            border-bottom: 2px solid #95a5a6;
+            width: 140px;
+            text-align: center;
+            font-size: 18px;
+            padding: 5px;
+            background: #f4f6f9;
+            color: #333;
+            margin: 0 5px;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+        }
+        .inline-input:focus { outline: none; border-bottom-color: var(--primary-color); background: #e8f0fe; }
+        .inline-input.correct { border-bottom-color: var(--success-color); color: var(--success-color); font-weight: bold; background: white;}
+        .inline-input.wrong { border-bottom-color: var(--error-color); color: var(--error-color); background: #fff0f0;}
+
+        /* 解析区域 */
+        .analysis-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f1f9ff;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 0 8px 8px 0;
+            display: none;
+            font-size: 16px;
+            color: #444;
+        }
+        .analysis-label { font-weight: bold; color: var(--secondary-color); margin-right: 5px; }
+
+        .check-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .check-btn:hover { background: #34495e; }
+
+        /* 提交按钮 */
+        .submit-all-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+        .submit-all-btn:hover { transform: scale(1.05); }
+
+        /* 结果弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        .result-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 450px;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .score-num { font-size: 60px; color: var(--primary-color); font-weight: bold; display: block; margin: 20px 0; }
+        .result-btns { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+        .res-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; }
+        .btn-retry { background: var(--accent-color); }
+        .btn-restart { background: var(--secondary-color); }
+
+        textarea { width: 100%; height: 150px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; margin-top: 15px; font-size: 16px; font-family: inherit; }
+
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h2>🎓 2025 高职高考英语特训</h2>
+        <input type="text" id="u-class" placeholder="请输入班级">
+        <input type="text" id="u-id" placeholder="请输入学号">
+        <input type="text" id="u-name" placeholder="请输入姓名">
+        <button onclick="login()" class="check-btn" style="width:100%; margin-top:20px; background:var(--primary-color);">开始答题</button>
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar" style="display:none;">
+    <div class="user-info-display">
+        <h3 id="disp-name">考生</h3>
+        <p id="disp-id">--</p>
+    </div>
+    <div id="menu-container"></div>
+</div>
+
+<div class="main-content" id="main-area" style="display:none;">
+    <div id="content-container"></div>
+</div>
+
+<button class="submit-all-btn" onclick="submitExam()">交卷</button>
+
+<div class="modal-overlay" id="result-modal">
+    <div class="result-card">
+        <h2>考试结束</h2>
+        <p>您的练习成绩为</p>
+        <span class="score-num" id="final-score">0</span>
+        <p style="color:#7f8c8d; font-size:0.9em;">满分：105分 (不含阅读理解)</p>
+        <div class="result-btns">
+            <button class="res-btn btn-retry" onclick="retryWrongMode()">只练错题</button>
+            <button class="res-btn btn-restart" onclick="location.reload()">重新答题</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 题库数据 (增强解析版) ---
+    // 2) 答案解析显示完整的中文翻译（已在 exp 字段中增强）
+    const examData = [
+        {
+            id: 'part1',
+            title: "I. 补全对话 (单选)",
+            type: 'choice',
+            desc: "阅读下列简短对话，从A、B、C、D中选出最佳答案。",
+            questions: [
+                { id: 1, q: "Hello! My name is Lily.<br>- Hi, Lily. I'm Tom. ______", options: ["A. Come on.", "B. My pleasure.", "C. Go ahead.", "D. Glad to meet you."], ans: "D", exp: "<br><span class='analysis-label'>【句意】</span> -你好！我叫莉莉。<br>-嗨，莉莉。我是汤姆。很高兴认识你。<br><span class='analysis-label'>【解析】</span> 初次见面打招呼常用 'Glad to meet you' (很高兴认识你)。" },
+                { id: 2, q: "Can you believe it? I've passed the exam.<br>- ______ All your efforts paid off.", options: ["A. Congratulations!", "B. You're right.", "C. Behave yourself.", "D. Take your time."], ans: "A", exp: "<br><span class='analysis-label'>【句意】</span> -你敢信吗？我通过了考试。<br>-祝贺你！你所有的努力都得到了回报。<br><span class='analysis-label'>【解析】</span> 听到好消息应表示祝贺，A选项意为“祝贺！”。" },
+                { id: 3, q: "What a cold day! Let's get some hot drink.<br>- ______ What about the cafe around the corner?", options: ["A. Funny.", "B. Sure.", "C. No thanks, please.", "D. Don't worry."], ans: "B", exp: "<br><span class='analysis-label'>【句意】</span> -多冷的天啊！我们去喝点热饮吧。<br>-当然好啊。街角的咖啡馆怎么样？<br><span class='analysis-label'>【解析】</span> 同意对方提议，用 'Sure' (当然)。" },
+                { id: 4, q: "I want to try painting, but I don't have the talent.<br>- ______ It's all about having fun.", options: ["A. Not at all.", "B. Cheers.", "C. Just give it a try.", "D. You're kidding."], ans: "C", exp: "<br><span class='analysis-label'>【句意】</span> -我想尝试画画，但我没有天赋。<br>-就试一试吧。这主要是为了好玩。<br><span class='analysis-label'>【解析】</span> 鼓励对方尝试，C选项 'Just give it a try' (试一试) 符合语境。" },
+                { id: 5, q: "- Why not put down your phone and do some exercise?<br>- ______ I'll start running tomorrow.", options: ["A. Good idea.", "B. Well done.", "C. It doesn't matter.", "D. Sorry to hear that."], ans: "A", exp: "<br><span class='analysis-label'>【句意】</span> -为什么不放下手机去锻炼一下呢？<br>-好主意。我明天开始跑步。<br><span class='analysis-label'>【解析】</span> 赞同建议，A选项 'Good idea' (好主意) 最为合适。" }
+            ]
+        },
+        {
+            id: 'part2',
+            title: "II. 词汇 (单选)",
+            type: 'choice',
+            desc: "阅读下列句子，选出句中画线单词或词组的意义。",
+            questions: [
+                { id: 6, q: "He delivered a formal <u>address</u> at the open-air meeting.", options: ["A. 致辞", "B. 地址", "C. 文件", "D. 产品"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 他在露天会议上发表了正式致辞。<br><span class='analysis-label'>【解析】</span> address 在此作名词，意为“演讲，致辞”。" },
+                { id: 7, q: "Senior <u>consumers</u> want more information about what they buy.", options: ["A. 快递员", "B. 服务员", "C. 消费者", "D. 管理者"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 老年消费者想要更多关于他们所购商品的信息。<br><span class='analysis-label'>【解析】</span> consumer 意为“消费者”。" },
+                { id: 8, q: "He <u>delayed</u> telling her the news, waiting for the right moment.", options: ["A. 后悔", "B. 推迟", "C. 强调", "D. 忘记"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> 他推迟了告诉她这个消息，在等待合适的时机。<br><span class='analysis-label'>【解析】</span> delay 意为“推迟，延误”。" },
+                { id: 9, q: "I didn't really want to go but he <u>insisted</u>.", options: ["A. 坚持", "B. 同意", "C. 离开", "D. 隐瞒"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 我真的不想去，但他坚持（要我去）。<br><span class='analysis-label'>【解析】</span> insist 意为“坚持”。" },
+                { id: 10, q: "I have no <u>sympathy</u> for Jane, it's all her fault.", options: ["A. 兴趣", "B. 厌恶", "C. 鼓励", "D. 同情"], ans: "D", exp: "<span class='analysis-label'>【句意】</span> 我不同情简，那全是她的错。<br><span class='analysis-label'>【解析】</span> sympathy 意为“同情”。" },
+                { id: 11, q: "It's a pleasure to <u>team up with</u> such excellent students as you.", options: ["A. 学习", "B. 评价", "C. 保护", "D. 合作"], ans: "D", exp: "<span class='analysis-label'>【句意】</span> 与像你这样优秀的学生合作很高兴。<br><span class='analysis-label'>【解析】</span> team up with 意为“与...合作/组队”。" },
+                { id: 12, q: "Free tickets for the New Year concert are <u>available</u> from the school.", options: ["A. 可收藏的", "B. 可回收的", "C. 可获得的", "D. 可复制的"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 新年音乐会的免费门票可以从学校获得。<br><span class='analysis-label'>【解析】</span> available 意为“可获得的”。" },
+                { id: 13, q: "Mary is the editor <u>in charge of</u> the art and music section.", options: ["A. 教授", "B. 负责", "C. 访问", "D. 指控"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> 玛丽是负责艺术和音乐版块的编辑。<br><span class='analysis-label'>【解析】</span> in charge of 意为“负责，主管”。" },
+                { id: 14, q: "\"Right\" and \"wrong\" are just <u>comparative</u> terms.", options: ["A. 褒义的", "B. 相对的", "C. 客观的", "D. 专属的"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> “对”与“错”只是相对的概念。<br><span class='analysis-label'>【解析】</span> comparative 意为“相对的，比较的”。" },
+                { id: 15, q: "When <u>exactly</u> are they supposed to arrive?", options: ["A. 基本地", "B. 分散地", "C. 确切地", "D. 稳妥地"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 他们确切什么时候应该到达？<br><span class='analysis-label'>【解析】</span> exactly 意为“确切地”。" }
+            ]
+        },
+        {
+            id: 'part3',
+            title: "III. 完形填空 (分屏)",
+            type: 'split_choice',
+            paragraphs: [
+                { en: "One day, Lucy took a late-night flight to Beijing. The flight was unexpectedly full. As the last <b>[16]</b> to board the plane, Lucy had to leave her bag in an area away from her.", cn: "一天，露西乘坐深夜航班飞往北京。航班出乎意料地满了。作为最后一个登机的<b>[16]乘客</b>，露西不得不把包放在离她很远的地方。" },
+                { en: "After two hours, the plane <b>[17]</b>. Lucy rushed out of the airport and headed off to the hotel to have a good <b>[18]</b>. When Lucy <b>[19]</b> the hotel room, she immediately threw herself onto the bed.", cn: "两小时后，飞机<b>[17]降落</b>了。露西冲出机场，直奔酒店想好好<b>[18]睡一觉</b>。当露西<b>[19]进入</b>酒店房间时，她立刻扑倒在床上。" },
+                { en: "Suddenly, she remembered that she still had some urgent work to do. She got up and looked for her <b>[20]</b> where she had put her laptop. But she couldn't find it. \"Oh, my goodness!\" Lucy <b>[21]</b>. \"I left the bag on the plane.\"", cn: "突然，她想起还有些紧急工作要做。她起身寻找放笔记本电脑的<b>[20]包</b>。但她找不到。\"哦，天哪！\"露西<b>[21]大叫道</b>。\"我把包落在飞机上了。\"" },
+                { en: "She picked up her phone and searched for the <b>[22]</b> of the airline company. Lucy wondered whether it was <b>[23]</b> to get help so late at night. <b>[24]</b>, she found a hotline number and made the call.", cn: "她拿起手机，搜索航空公司的<b>[22]号码</b>。露西不知道这么晚了是否<b>[23]可能</b>得到帮助。<b>[24]幸运地</b>，她找到了一个热线号码并拨打了过去。" },
+                { en: "She was quite <b>[25]</b> to get through. After <b>[26]</b> what had happened, she was asked to wait for a reply. Keeping her fingers crossed, Lucy walked up and down the room <b>[27]</b>.", cn: "电话接通了，她感到非常<b>[25]高兴</b>。在<b>[26]解释</b>了发生的事情后，她被要求等待回复。露西祈祷着，<b>[27]焦虑地</b>在房间里来回踱步。" },
+                { en: "An hour later, Lucy received a <b>[28]</b> from the airport. It turned out that her bag had been <b>[29]</b> to the lost-and-found department of the airport. She hurried back to the airport at once and <b>[30]</b> her belongings.", cn: "一小时后，露西接到了机场的<b>[28]电话</b>。原来她的包被<b>[29]送</b>到了机场失物招领处。她立刻赶回机场，<b>[30]取回</b>了自己的物品。" }
+            ],
+            questions: [
+                { id: 16, options: ["A. pilot", "B. guard", "C. driver", "D. passenger"], ans: "D", exp: "<span class='analysis-label'>【句意】</span> 作为最后一个登机的乘客...<br><span class='analysis-label'>【解析】</span> 根据语境，她是乘客(passenger)。" },
+                { id: 17, options: ["A. flew", "B. rolled", "C. landed", "D. passed"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 两小时后，飞机降落了。<br><span class='analysis-label'>【解析】</span> 航班结束，飞机降落用 landed。" },
+                { id: 18, options: ["A. sleep", "B. meal", "C. talk", "D. bath"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 去酒店好好睡一觉。<br><span class='analysis-label'>【解析】</span> 后文提到扑倒在床上，故选 sleep。" },
+                { id: 19, options: ["A. got into", "B. broke into", "C. looked into", "D. turned into"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 当露西进入房间时...<br><span class='analysis-label'>【解析】</span> 进入房间用 got into。" },
+                { id: 20, options: ["A. key", "B. bag", "C. phone", "D. passport"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> 她寻找放笔记本电脑的包。<br><span class='analysis-label'>【解析】</span> 电脑通常放在包(bag)里。" },
+                { id: 21, options: ["A. cheered", "B. shouted", "C. demanded", "D. repeated"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> “哦天哪！”露西大叫道。<br><span class='analysis-label'>【解析】</span> 发现东西丢了，情绪激动大叫(shouted)。" },
+                { id: 22, options: ["A. map", "B. name", "C. number", "D. picture"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 搜索航空公司的号码。<br><span class='analysis-label'>【解析】</span> 找客服联系方式即找电话号码(number)。" },
+                { id: 23, options: ["A. safe", "B. helpful", "C. necessary", "D. possible"], ans: "D", exp: "<span class='analysis-label'>【句意】</span> 不知道是否可能得到帮助。<br><span class='analysis-label'>【解析】</span> possible 意为可能的。" },
+                { id: 24, options: ["A. Curiously", "B. Luckily", "C. Strangely", "D. Confidently"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> 幸运地，她找到了热线。<br><span class='analysis-label'>【解析】</span> 事情有了转机，表示幸运用 Luckily。" },
+                { id: 25, options: ["A. shy", "B. angry", "C. delighted", "D. disappointed"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 电话接通她很高兴。<br><span class='analysis-label'>【解析】</span> 问题有望解决，心情是高兴的(delighted)。" },
+                { id: 26, options: ["A. watching", "B. explaining", "C. checking", "D. questioning"], ans: "B", exp: "<span class='analysis-label'>【句意】</span> 在解释了发生的事情后...<br><span class='analysis-label'>【解析】</span> 向客服说明情况用 explaining。" },
+                { id: 27, options: ["A. quietly", "B. freely", "C. worriedly", "D. happily"], ans: "C", exp: "<span class='analysis-label'>【句意】</span> 露西焦虑地在房间踱步。<br><span class='analysis-label'>【解析】</span> 等待结果时心情忐忑，用 worriedly。" },
+                { id: 28, options: ["A. call", "B. gift", "C. letter", "D. ticket"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 接到了机场的电话。<br><span class='analysis-label'>【解析】</span> receive a call 接到电话。" },
+                { id: 29, options: ["A. sent", "B. sold", "C. shown", "D. exported"], ans: "A", exp: "<span class='analysis-label'>【句意】</span> 包被送到了失物招领处。<br><span class='analysis-label'>【解析】</span> be sent to 被送到。" },
+                { id: 30, options: ["A. hid", "B. changed", "C. returned", "D. collected"], ans: "D", exp: "<span class='analysis-label'>【句意】</span> 取回了自己的物品。<br><span class='analysis-label'>【解析】</span> collect 意为领取、取回。" }
+            ]
+        },
+        {
+            id: 'part5',
+            title: "V. 语法填空 (分屏+输入)",
+            type: 'split_input',
+            desc: "阅读下面短文，在空格处填入一个适当的词或用括号中词语的正确形式填空。<b>请直接点击横线输入，并点击右侧【确认】按钮。</b>",
+            paragraphs: [
+                { en: "Clare is a little girl with great curiosity. She can't decide what she wants to be when she grows up. One day, Clare asked her mom [46] ______ advice. Mom thought carefully, and then decided [47] ______ (take) her on a job adventure.", cn: "【翻译】克莱尔是个好奇心很强的小女孩。她还没决定长大后想做什么。有一天，克莱尔向妈妈寻求[46](for)建议。妈妈仔细思考后，决定[47](to take)带她去体验一次职业冒险。" },
+                { en: "The next day, Clare and Mom set off. Their first stop was a hospital. There, Clare learned that doctors cure illnesses and help [48] ______ (patient) get well. She knew [49] ______ important doctors are.", cn: "【翻译】第二天，克莱尔和妈妈出发了。第一站是医院。在那里，克莱尔了解到医生治愈疾病并帮助[48](patients)病人康复。她知道了医生是[49](how)多么重要。" },
+                { en: "Their adventure continued. At a school, they met a kind young teacher [50] ______ showed them around. Teachers help students learn new things in schools and open up [51] ______ whole new world of possibilities for them.", cn: "【翻译】她们的冒险继续着。在一所学校，她们遇到了一位善良的年轻老师，她[50](who)带她们参观。老师帮助学生在学校学习新事物，并为他们开启[51](a)一个充满可能性的全新世界。" },
+                { en: "Finally, they stopped by a construction site. A [52] ______ (friend) engineer gave them hard hats and showed them the blueprint for a new park. Clare understood that engineers design things and build places, [53] ______ (make) people's life better.", cn: "【翻译】最后，她们在建筑工地停了下来。一位[52](friendly)友好的工程师给了她们安全帽，并给她们看了新公园的蓝图。克莱尔明白了工程师设计东西、建造场所，[53](making)让人们的生活更美好。" },
+                { en: "When the adventure [54] ______ (end), Clare learned a lot about jobs. Although she has yet to decide what to do in the future, she has realized that various jobs, each like a unique puzzle piece, fit [55] ______ (perfect) to make the world a better place to live.", cn: "【翻译】当冒险[54](ended)结束时，克莱尔学到了很多关于工作的知识。虽然她还没决定将来做什么，但她意识到各种各样的工作，每一个就像独特的拼图碎片，[55](perfectly)完美地拼合在一起，让世界变得更宜居。" }
+            ],
+            questions: [
+                { id: 46, ans: "for", exp: "<span class='analysis-label'>【解析】</span> ask sb for advice 固定搭配，意为“向某人寻求建议”。" },
+                { id: 47, ans: "to take", exp: "<span class='analysis-label'>【解析】</span> decide to do sth 固定搭配，意为“决定做某事”。" },
+                { id: 48, ans: "patients", exp: "<span class='analysis-label'>【解析】</span> patient作help的宾语，泛指“病人”，需用复数 patients。" },
+                { id: 49, ans: "how", exp: "<span class='analysis-label'>【解析】</span> 引导感叹句宾语从句，修饰形容词 important，用 how。" },
+                { id: 50, ans: "who", exp: "<span class='analysis-label'>【解析】</span> 定语从句，先行词 teacher 指人，且在从句中作主语，用 who 引导。" },
+                { id: 51, ans: "a", exp: "<span class='analysis-label'>【解析】</span> 泛指“一个”全新的世界，whole 以辅音音素开头，用不定冠词 a。" },
+                { id: 52, ans: "friendly", exp: "<span class='analysis-label'>【解析】</span> 修饰名词 engineer，应用形容词 friendly (友好的)。" },
+                { id: 53, ans: "making", exp: "<span class='analysis-label'>【解析】</span> 动词 make 与逻辑主语 engineers 之间是主动关系，作结果/伴随状语，用现在分词 making。" },
+                { id: 54, ans: "ended", exp: "<span class='analysis-label'>【解析】</span> 叙述过去发生的事情，用一般过去时 ended。" },
+                { id: 55, ans: "perfectly", exp: "<span class='analysis-label'>【解析】</span> 修饰动词 fit，应用副词 perfectly (完美地)。" }
+            ]
+        },
+        {
+            id: 'part6',
+            title: "VI. 完成句子 (填空)",
+            type: 'input_sentence',
+            desc: "根据所给汉语提示，在横线上填写正确的英语表达。<b>填写后点击右侧【确认】按钮。</b>",
+            questions: [
+                { id: 56, q: "56. (我们什么时候开会) ______ is still under discussion.", ans: "When we will have the meeting", exp: "<span class='analysis-label'>【句意】</span> 我们什么时候开会还在讨论中。<br><span class='analysis-label'>【解析】</span> 主语从句 + 陈述语序 + 一般将来时。" },
+                { id: 57, q: "57. It is wise of you ______ (保护个人信息).", ans: "to protect personal information", exp: "<span class='analysis-label'>【句意】</span> 保护个人信息是明智的。<br><span class='analysis-label'>【解析】</span> It is wise of sb to do sth，不定式作真主语。" },
+                { id: 58, q: "58. This is the only house ______ (需要维修的).", ans: "that needs repairing", exp: "<span class='analysis-label'>【句意】</span> 这是唯一需要维修的房子。<br><span class='analysis-label'>【解析】</span> 先行词被 only 修饰，定语从句关系词用 that；need doing (需要被...)。" },
+                { id: 59, q: "59. The box is ______ (太重了提不动).", ans: "too heavy to carry", exp: "<span class='analysis-label'>【句意】</span> 这个箱子太重了提不动。<br><span class='analysis-label'>【解析】</span> too ... to ... 结构，意为“太...以至于不能...”。" },
+                { id: 60, q: "60. So far, ______ (我们还没完成任务).", ans: "we haven't finished the task yet", exp: "<span class='analysis-label'>【句意】</span> 到目前为止，我们还没完成任务。<br><span class='analysis-label'>【解析】</span> So far 是现在完成时的标志词。" }
+            ]
+        },
+        {
+            id: 'part7',
+            title: "VII. 应用写作",
+            type: 'writing',
+            desc: "请在下方文本框中输入作文，点击提交后显示参考范文。",
+            questions: [
+                { id: 61, q: "61. 请给外教Mr. Smith写邮件，请他给你一些提高英语口语的建议。（正文约40词）", ans: "Dear Mr. Smith,\nI'm Li Hua, a student from your class. I'm writing to ask for your advice on improving my spoken English. I really want to make progress and hope you can give me some useful suggestions. Thank you very much.\nYours sincerely,\nLi Hua", exp: "<span class='analysis-label'>【参考范文】</span> (见上文)<br><span class='analysis-label'>【写作要点】</span><br>1. 自我介绍 (student from your class);<br>2. 写作目的 (ask for advice on spoken English);<br>3. 表达期望和感谢。" }
+            ]
+        }
+    ];
+
+    let userResponses = {}; 
+    let currentSectionIndex = 0;
+    let isRetryMode = false;
+    let correctIds = new Set(); // 记录做对的题目ID
+
+    function login() {
+        const cls = document.getElementById('u-class').value;
+        const name = document.getElementById('u-name').value;
+        if (!cls || !name) return alert("请输入班级和姓名");
+        
+        document.getElementById('disp-name').innerText = name;
+        document.getElementById('disp-id').innerText = cls + "班";
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('main-area').style.display = 'block';
+        
+        initMenu();
+        showSection(0);
+    }
+
+    function initMenu() {
+        const container = document.getElementById('menu-container');
+        container.innerHTML = '';
+        examData.forEach((part, index) => {
+            const item = document.createElement('div');
+            item.className = 'menu-item';
+            item.innerHTML = part.title;
+            item.onclick = () => showSection(index);
+            container.appendChild(item);
+        });
+    }
+
+    function showSection(index) {
+        currentSectionIndex = index;
+        const container = document.getElementById('content-container');
+        container.innerHTML = ''; 
+        
+        document.querySelectorAll('.menu-item').forEach((el, i) => {
+            el.classList.toggle('active', i === index);
+        });
+
+        const data = examData[index];
+        
+        const title = document.createElement('h2');
+        title.innerHTML = data.title + (isRetryMode ? " <span style='color:red;font-size:0.6em'>(错题重练模式)</span>" : "");
+        container.appendChild(title);
+
+        if(data.desc) {
+            const desc = document.createElement('p');
+            desc.innerHTML = data.desc;
+            desc.style.color = '#666';
+            container.appendChild(desc);
+        }
+
+        if (data.type === 'choice') renderChoice(data, container);
+        else if (data.type === 'split_choice') renderSplitChoice(data, container);
+        else if (data.type === 'split_input') renderSplitInput(data, container);
+        else if (data.type === 'input_sentence') renderInputSentence(data, container);
+        else if (data.type === 'writing') renderWriting(data, container);
+    }
+
+    // 辅助：检查是否应该显示该题 (错题模式逻辑)
+    function shouldRenderQuestion(qid) {
+        if (!isRetryMode) return true;
+        return !correctIds.has(qid); // 如果在错题模式下，只显示未做对的
+    }
+
+    // 3) 翻译折叠控制函数
+    window.toggleTrans = function(id) {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('btn-' + id);
+        if (el.style.display === 'block') {
+            el.style.display = 'none';
+            btn.innerHTML = '点击查看翻译';
+        } else {
+            el.style.display = 'block';
+            btn.innerHTML = '收起翻译';
+        }
+    };
+
+    function renderChoice(data, container) {
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let html = `<div class="q-title">${q.id}. ${q.q}</div>`;
+            html += `<div class="options-group">`;
+            q.options.forEach(opt => {
+                html += `<button class="option-btn" onclick="checkChoice(this, ${q.id}, '${opt}', '${q.ans}')">${opt}</button>`;
+            });
+            html += `</div>`;
+            html += `<div class="analysis-box" id="exp-${q.id}">${q.exp}</div>`;
+            
+            card.innerHTML = html;
+            container.appendChild(card);
+            
+            if (userResponses[q.id]) restoreChoiceState(card, q.id, q.ans);
+        });
+    }
+
+    function renderSplitChoice(data, container) {
+        const wrap = document.createElement('div');
+        wrap.className = 'split-layout';
+        
+        const left = document.createElement('div');
+        left.className = 'passage-panel';
+        data.paragraphs.forEach((p, idx) => {
+            const transId = `p-trans-${idx}`;
+            left.innerHTML += `
+                <p>${p.en}</p>
+                <span id="btn-${transId}" class="trans-toggle-btn" onclick="toggleTrans('${transId}')">点击查看翻译</span>
+                <div id="${transId}" class="para-trans">${p.cn}</div>
+                <hr style="border:0; border-top:1px dashed #eee; margin:15px 0;">
+            `;
+        });
+        
+        const right = document.createElement('div');
+        right.className = 'questions-panel';
+        renderChoice({questions: data.questions}, right);
+        
+        wrap.appendChild(left);
+        wrap.appendChild(right);
+        container.appendChild(wrap);
+    }
+
+    function renderSplitInput(data, container) {
+        const wrap = document.createElement('div');
+        wrap.className = 'split-layout';
+        
+        const left = document.createElement('div');
+        left.className = 'passage-panel';
+        
+        data.paragraphs.forEach((p, idx) => {
+            let processedEn = p.en.replace(/\[(\d+)\]\s*______/g, (match, id) => {
+                // 如果错题模式且该题已对，显示文本而非输入框
+                if (isRetryMode && correctIds.has(parseInt(id))) {
+                    const ans = data.questions.find(q => q.id == id).ans;
+                    return `[${id}] <strong style="color:green; border-bottom:1px solid green;">${ans}</strong>`;
+                }
+                return `[${id}] <input type="text" class="inline-input" id="input-${id}" autocomplete="off">`;
+            });
+            
+            const transId = `p-gram-trans-${idx}`;
+            left.innerHTML += `
+                <p>${processedEn}</p>
+                <span id="btn-${transId}" class="trans-toggle-btn" onclick="toggleTrans('${transId}')">点击查看翻译</span>
+                <div id="${transId}" class="para-trans">${p.cn}</div>
+                <hr style="border:0; border-top:1px dashed #eee; margin:15px 0;">
+            `;
+        });
+
+        const right = document.createElement('div');
+        right.className = 'questions-panel';
+        
+        let hasQuestions = false;
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+            hasQuestions = true;
+
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>第 ${q.id} 题</strong>
+                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认答案</button>
+                </div>
+                <div class="analysis-box" id="exp-${q.id}">
+                    <strong>正确答案：</strong> ${q.ans}<br>
+                    ${q.exp}
+                </div>
+            `;
+            right.appendChild(card);
+        });
+
+        if (!hasQuestions && isRetryMode) {
+            right.innerHTML = "<div style='padding:20px; color:#999;'>本部分已全部完成！</div>";
+        }
+
+        wrap.appendChild(left);
+        wrap.appendChild(right);
+        container.appendChild(wrap);
+
+        setTimeout(() => restoreInputState(data.questions), 100);
+    }
+
+    function renderInputSentence(data, container) {
+        let hasQuestions = false;
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+            hasQuestions = true;
+
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            // 4) 允许直接在横线处填写 -> 替换 ______ 为输入框
+            const qHtml = q.q.replace('______', `<input type="text" class="inline-input" id="input-${q.id}" style="width:250px" autocomplete="off">`);
+            
+            card.innerHTML = `
+                <div class="q-title">${qHtml}</div>
+                <div style="margin-top:15px;">
+                    <button class="check-btn" onclick="checkInput(${q.id}, '${q.ans}')">确认答案</button>
+                </div>
+                <div class="analysis-box" id="exp-${q.id}">
+                    <strong>参考答案：</strong> ${q.ans}<br>
+                    ${q.exp}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        if (!hasQuestions && isRetryMode) {
+            container.innerHTML += "<div style='padding:20px; color:#999;'>本部分已全部完成！</div>";
+        }
+        setTimeout(() => restoreInputState(data.questions), 100);
+    }
+
+    function renderWriting(data, container) {
+        data.questions.forEach(q => {
+            // 写作题通常不参与“对错”自动判断，但在错题模式下我们可以始终显示
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.innerHTML = `
+                <div class="q-title">${q.q}</div>
+                <textarea id="input-${q.id}" placeholder="请在此处作答..."></textarea>
+                <div style="margin-top:15px;">
+                    <button class="check-btn" onclick="checkWriting(${q.id})">提交作文</button>
+                </div>
+                <div class="analysis-box" id="exp-${q.id}">
+                    ${q.exp}
+                    <div style="margin-top:10px; background:#eee; padding:10px; border-radius:4px;">
+                        <strong>范文内容：</strong><br>
+                        <pre style="white-space: pre-wrap; font-family:inherit;">${q.ans}</pre>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            if (userResponses[q.id]) {
+                document.getElementById(`input-${q.id}`).value = userResponses[q.id].userVal;
+                document.getElementById(`exp-${q.id}`).style.display = 'block';
+            }
+        });
+    }
+
+    // --- 交互与判分 ---
+
+    window.checkChoice = function(btn, id, optStr, ansStr) {
+        const parent = btn.parentElement;
+        const allBtns = parent.querySelectorAll('button');
+        const expDiv = document.getElementById(`exp-${id}`);
+        
+        allBtns.forEach(b => b.disabled = true);
+        
+        const isCorrect = optStr.startsWith(ansStr);
+        if (isCorrect) {
+            btn.classList.add('correct');
+            correctIds.add(id);
+        } else {
+            btn.classList.add('wrong');
+            correctIds.delete(id); // 确保重练逻辑
+            // 显示正确选项
+            allBtns.forEach(b => {
+                if(b.innerText.startsWith(ansStr)) b.classList.add('correct');
+            });
+        }
+        
+        expDiv.style.display = 'block';
+        userResponses[id] = { type: 'choice', userChoice: optStr.charAt(0), isCorrect: isCorrect, ans: ansStr };
+    };
+
+    function restoreChoiceState(card, id, ansStr) {
+        const btns = card.querySelectorAll('.option-btn');
+        const exp = card.querySelector('.analysis-box');
+        const userChoice = userResponses[id].userChoice;
+        
+        btns.forEach(btn => {
+            btn.disabled = true;
+            if(btn.innerText.startsWith(ansStr)) btn.classList.add('correct');
+            if(btn.innerText.startsWith(userChoice) && !btn.innerText.startsWith(ansStr)) btn.classList.add('wrong');
+        });
+        exp.style.display = 'block';
+    }
+
+    window.checkInput = function(id, correctAns) {
+        const input = document.getElementById(`input-${id}`);
+        const expDiv = document.getElementById(`exp-${id}`);
+        if(!input) return; // 错题模式下可能不存在
+        const userVal = input.value.trim();
+        
+        if (!userVal) return alert("请先填写答案！");
+        
+        // 宽松匹配逻辑
+        const cleanUser = userVal.toLowerCase().replace(/\s+/g, ' ').replace(/[.,?!]/g, '');
+        const cleanAns = correctAns.toLowerCase().replace(/\s+/g, ' ').replace(/[.,?!]/g, '');
+        
+        // 包含判断或全等
+        let isCorrect = (cleanUser === cleanAns) || (cleanAns.includes(cleanUser) && cleanUser.length > 3);
+
+        if (isCorrect) {
+            input.classList.add('correct');
+            correctIds.add(id);
+        } else {
+            input.classList.add('wrong');
+            correctIds.delete(id);
+        }
+        
+        input.disabled = true;
+        expDiv.style.display = 'block';
+        userResponses[id] = { type: 'input', userVal: userVal, isCorrect: isCorrect };
+    };
+    
+    window.checkWriting = function(id) {
+        const input = document.getElementById(`input-${id}`);
+        const expDiv = document.getElementById(`exp-${id}`);
+        if (!input.value.trim()) return alert("请先写点什么吧~");
+        
+        input.disabled = true;
+        expDiv.style.display = 'block';
+        userResponses[id] = { type: 'writing', userVal: input.value, isCorrect: true };
+    };
+
+    function restoreInputState(questions) {
+        questions.forEach(q => {
+            if (shouldRenderQuestion(q.id) && userResponses[q.id]) {
+                const input = document.getElementById(`input-${q.id}`);
+                const exp = document.getElementById(`exp-${q.id}`);
+                if (input && exp) {
+                    input.value = userResponses[q.id].userVal;
+                    input.disabled = true;
+                    exp.style.display = 'block';
+                    input.classList.add(userResponses[q.id].isCorrect ? 'correct' : 'wrong');
+                }
+            }
+        });
+    }
+
+    // --- 提交与重练 ---
+
+    window.submitExam = function() {
+        let score = 0;
+        // 简单计分
+        Object.values(userResponses).forEach(r => {
+            if (r.type === 'writing') score += 15; 
+            else if (r.isCorrect) score += (r.type === 'choice' ? 2 : 3);
+        });
+        
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('result-modal').style.display = 'flex';
+    };
+
+    window.retryWrongMode = function() {
+        // 4) 错题重练逻辑
+        isRetryMode = true;
+        document.getElementById('result-modal').style.display = 'none';
+        
+        // 清除错题的作答记录，保留对题的记录
+        for (let key in userResponses) {
+            if (!userResponses[key].isCorrect && userResponses[key].type !== 'writing') {
+                delete userResponses[key];
+            }
+        }
+        
+        alert("已进入【错题重练】模式，做对的题目已自动隐藏。");
+        showSection(0); // 回到第一题
+        // 刷新菜单状态
+        document.querySelector('.menu-item').click(); 
+    };
+
+</script>
+</body>
+</html>
