@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2023年广东高职高考英语 - 智能训练系统 (修复版)</title>
+    <style>
+        /* --- 2023版视觉风格：清新绿主题 --- */
+        :root {
+            --primary-color: #27ae60;       /* 主色调：清新绿 */
+            --secondary-color: #2c3e50;     /* 深灰 */
+            --accent-color: #f39c12;        /* 活力橙 */
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --bg-color: #f4fcf6;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: #333;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* --- 移动端适配组件 --- */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed; top: 15px; left: 15px; z-index: 200;
+            background: var(--secondary-color); color: white;
+            border: none; padding: 8px 12px; border-radius: 6px;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .mobile-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(3px);
+        }
+
+        /* --- 登录层 --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #27ae60, #82ccdd);
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
+        }
+
+        .login-box {
+            background: white; padding: 40px 30px; border-radius: 15px;
+            width: 100%; max-width: 380px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+        .login-box h2 { margin-top: 0; color: var(--secondary-color); }
+        .login-box input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border: 1px solid #ddd; border-radius: 8px;
+            box-sizing: border-box; font-size: 16px;
+        }
+        .login-box input:focus { border-color: var(--primary-color); outline: none; }
+
+        /* --- 侧边栏 --- */
+        .sidebar {
+            width: var(--sidebar-width); background-color: white;
+            color: var(--secondary-color); display: flex; flex-direction: column;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.05); z-index: 160;
+            transition: transform 0.3s ease;
+        }
+        .user-info-display { padding: 30px 20px; background: #ecf0f1; border-bottom: 1px solid #ddd; }
+        .sidebar-header-mobile { display: none; } 
+        
+        .menu-item {
+            padding: 18px 25px; cursor: pointer; border-left: 5px solid transparent;
+            font-weight: 500; color: #555; border-bottom: 1px solid #f9f9f9;
+        }
+        .menu-item:hover { background-color: #f4f6f7; }
+        .menu-item.active { 
+            background-color: #eaf8ee; border-left-color: var(--primary-color);
+            color: var(--primary-color); font-weight: bold;
+        }
+
+        /* --- 主内容区 --- */
+        .main-content {
+            flex: 1; padding: 40px; overflow-y: auto;
+            position: relative; scroll-behavior: smooth;
+        }
+
+        /* --- 题目卡片 --- */
+        .question-card {
+            background: white; padding: 30px; margin-bottom: 25px;
+            border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        .q-title { font-weight: 600; margin-bottom: 20px; font-size: 1.1em; color: #2c3e50; }
+
+        /* --- 选项按钮 --- */
+        .options-group { display: grid; gap: 12px; }
+        .option-btn {
+            text-align: left; padding: 15px 20px; background: #f8f9fa;
+            border: 1px solid #e9ecef; border-radius: 8px; cursor: pointer;
+            font-size: 16px; color: #495057; transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) { background: #e2e6ea; }
+        .option-btn.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .option-btn.wrong { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; }
+
+        /* --- 分屏布局 (阅读/语法) --- */
+        .split-layout { display: flex; gap: 30px; align-items: flex-start; height: calc(100vh - 120px); }
+        .passage-panel {
+            flex: 1; background: #fff; padding: 25px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow-y: auto; height: 100%;
+            border-top: 4px solid var(--primary-color); line-height: 1.8; color: #444;
+        }
+        .questions-panel { flex: 1; overflow-y: auto; height: 100%; padding-right: 5px; }
+
+        /* --- 翻译显隐控制 --- */
+        .trans-toggle-btn {
+            display: inline-block; margin-top: 8px; padding: 4px 10px;
+            font-size: 0.85em; color: var(--primary-color); background: rgba(39, 174, 96, 0.1);
+            border-radius: 4px; cursor: pointer;
+        }
+        .para-trans {
+            display: none; margin-top: 10px; padding: 12px;
+            background-color: #fcf8e3; border-left: 3px solid var(--accent-color);
+            color: #666; font-size: 0.95em; border-radius: 0 4px 4px 0;
+        }
+
+        /* --- 填空输入框 --- */
+        .inline-input {
+            border: none; border-bottom: 2px solid #bdc3c7; width: 100px;
+            text-align: center; font-size: 1.1em; padding: 0 5px;
+            background: #f4f6f9; color: #2c3e50; margin: 0 4px; border-radius: 4px 4px 0 0;
+        }
+        .inline-input:focus { outline: none; border-bottom-color: var(--primary-color); background: white; }
+        .inline-input.correct { border-bottom-color: var(--success-color); color: var(--success-color); font-weight: bold; background: white; }
+        .inline-input.wrong { border-bottom-color: var(--error-color); color: var(--error-color); background: #fff5f5; }
+
+        /* --- 解析区域 --- */
+        .analysis-box {
+            margin-top: 20px; padding: 20px; background: #e8f8f0;
+            border-radius: 8px; display: none; font-size: 0.95em; color: #34495e;
+            border-left: 4px solid var(--primary-color);
+        }
+        .analysis-label { font-weight: bold; color: var(--primary-color); display: block; margin-bottom: 8px; }
+        
+        .check-btn {
+            background: var(--secondary-color); color: white; border: none;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em;
+        }
+
+        /* --- 提交按钮 --- */
+        .submit-all-btn {
+            position: fixed; bottom: 30px; right: 40px;
+            background: var(--success-color); color: white; border: none;
+            padding: 15px 35px; border-radius: 50px; font-size: 18px;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4); cursor: pointer; z-index: 100;
+        }
+
+        /* --- 结果弹窗 --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center;
+            z-index: 2000; padding: 20px; box-sizing: border-box; backdrop-filter: blur(3px);
+        }
+        .result-card {
+            background: white; padding: 40px; border-radius: 16px; text-align: center;
+            width: 100%; max-width: 450px; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .score-num { font-size: 60px; color: var(--primary-color); font-weight: bold; display: block; margin: 15px 0; }
+        .result-btns { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+        .res-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; }
+        .btn-retry { background: var(--accent-color); }
+        .btn-restart { background: var(--secondary-color); }
+        
+        textarea { width: 100%; height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; font-size: 16px; box-sizing: border-box; }
+
+        /* --- 移动端响应式 --- */
+        @media (max-width: 768px) {
+            body { font-size: 15px; } 
+            .mobile-menu-btn { display: block; }
+            .sidebar { position: fixed; top: 0; left: -100%; height: 100%; width: 80%; max-width: 300px; }
+            .sidebar.active-mobile { left: 0; }
+            .sidebar-header-mobile { display: flex; justify-content: flex-end; padding: 10px; }
+            .close-menu-btn { background: none; border: none; color: #333; font-size: 24px; }
+            .main-content { padding: 60px 15px 90px 15px; width: 100%; }
+            .split-layout { flex-direction: column; height: auto; gap: 20px; }
+            .passage-panel { width: 100%; height: auto; max-height: 40vh; border-top: none; border-left: 4px solid var(--primary-color); padding: 15px; box-sizing: border-box; }
+            .questions-panel { width: 100%; height: auto; overflow: visible; padding-right: 0; }
+            .inline-input { width: 80px; }
+            .submit-all-btn { right: 50%; transform: translateX(50%); bottom: 20px; width: 85%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
+<button class="mobile-menu-btn" onclick="toggleSidebar()">☰ 题目目录</button>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <h2>📚 2023 高职高考英语</h2>
+        <p style="color:#7f8c8d; margin-bottom:20px;">全真模拟智能训练</p>
+        <input type="text" id="u-class" placeholder="班级">
+        <input type="text" id="u-id" placeholder="学号">
+        <input type="text" id="u-name" placeholder="姓名">
+        <button onclick="login()" class="check-btn" style="width:100%; margin-top:20px; background:var(--primary-color); font-size:16px; padding:12px;">开始答题</button>
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header-mobile">
+        <button class="close-menu-btn" onclick="toggleSidebar()">×</button>
+    </div>
+    <div class="user-info-display">
+        <h3 id="disp-name" style="margin:0">考生</h3>
+        <p id="disp-id" style="margin:5px 0 0; font-size:0.9em; color:#666">--</p>
+    </div>
+    <div id="menu-container"></div>
+</div>
+
+<div class="main-content" id="main-area">
+    <div id="content-container"></div>
+</div>
+
+<button class="submit-all-btn" onclick="submitExam()">提交试卷</button>
+
+<div class="modal-overlay" id="result-modal">
+    <div class="result-card">
+        <h2>考试结束</h2>
+        <p>您的得分为</p>
+        <span class="score-num" id="final-score">0</span>
+        <div class="result-btns">
+            <button class="res-btn btn-retry" onclick="retryWrongMode()">错题重练</button>
+            <button class="res-btn btn-restart" onclick="location.reload()">重新开始</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===============================================
+    // 2023年真题数据 (已修复语法错误)
+    // ===============================================
+    const examData = [
+        {
+            id: 'part1',
+            title: "I. 补全对话",
+            type: 'choice',
+            desc: "阅读下列简短对话，从A、B、C、D中选出最佳答案。",
+            questions: [
+                { id: 1, q: "M: Would you like me to open the window?<br>W: ______", options: ["A. It doesn't matter", "B. I don't know", "C. Never mind", "D. Yes, please"], ans: "D", exp: "<span class='analysis-label'>解析与翻译</span>【翻译】男：你想让我打开窗户吗？女：是的，请（打开）。<br>【解析】考查情景交际，D选项符合接受提议的礼貌回应。" },
+                { id: 2, q: "M: ______?<br>W: I'd like to have a cup of coffee.", options: ["A. What do you mean", "B. How are you", "C. May I help you", "D. Are you with me"], ans: "C", exp: "<span class='analysis-label'>解析与翻译</span>【翻译】男：请问您想要点什么？（或：需要我帮忙吗？）女：我想喝杯咖啡。<br>【解析】考查餐厅或服务场所的常用语，C选项意为“我能帮您吗”。" },
+                { id: 3, q: "W: Thank you very much for coming to meet me, Mr. Smith.<br>M: ______", options: ["A. I hope so", "B. I see", "C. Have a nice day", "D. My pleasure"], ans: "D", exp: "<span class='analysis-label'>解析与翻译</span>【翻译】女：史密斯先生，非常感谢你过来接我。男：这是我的荣幸。<br>【解析】考查致谢的回应，My pleasure是回应感谢的常用体面说法。" },
+                { id: 4, q: "M: Excuse me. Could you tell me how to get to Garden Hotel?<br>W: Garden Hotel? ______ I really don't know.", options: ["A. Forget it", "B. I'm sorry", "C. Go ahead", "D. All right"], ans: "B", exp: "<span class='analysis-label'>解析与翻译</span>【翻译】男：打扰一下。你能告诉我怎么去花园酒店吗？女：花园酒店？对不起，我真的不知道。<br>【解析】当无法提供对方请求的帮助（指路）时，应先表示抱歉。" },
+                { id: 5, q: "M: Hello! This is Tom speaking. May I speak to Jane, please?<br>W: ______", options: ["A. Hold on, please", "B. You're welcome", "C. Nice to meet you", "D. She's my sister"], ans: "A", exp: "<span class='analysis-label'>解析与翻译</span>【翻译】男：你好！我是汤姆。请找一下简好吗？女：请稍等。<br>【解析】考查电话用语，Hold on意为“别挂断，稍等”。" }
+            ]
+        },
+        {
+            id: 'part2',
+            title: "II. 词汇",
+            type: 'choice',
+            desc: "选出句中画线单词或词组的意义。",
+            questions: [
+                { id: 6, q: "Please <u>remind</u> me to take my medicine tomorrow.", options: ["A. 强迫", "B. 建议", "C. 吩咐", "D. 提醒"], ans: "D", exp: "<span class='analysis-label'>解析</span>remind：提醒。句意：请提醒我明天吃药。" },
+                { id: 7, q: "There are many <u>poisonous</u> snakes in the area.", options: ["A. 可怕的", "B. 有毒的", "C. 凶猛的", "D. 稀有的"], ans: "B", exp: "<span class='analysis-label'>解析</span>poisonous：有毒的。句意：这个地区有很多毒蛇。" },
+                { id: 8, q: "The song was <u>specially</u> written for her birthday.", options: ["A. 单独地", "B. 随意地", "C. 专门地", "D. 顺便地"], ans: "C", exp: "<span class='analysis-label'>解析</span>specially：专门地。句意：这首歌是专门为她生日写的。" },
+                { id: 9, q: "They have been <u>out of work</u> for years since their factory was closed down.", options: ["A. 失业", "B. 休假", "C. 忙碌", "D. 求职"], ans: "A", exp: "<span class='analysis-label'>解析</span>out of work：失业。句意：自从工厂倒闭以来，他们已经失业多年了。" },
+                { id: 10, q: "This business plan looks very <u>professional</u>.", options: ["A. 专业的", "B. 著名的", "C. 一流的", "D. 国际的"], ans: "A", exp: "<span class='analysis-label'>解析</span>professional：专业的。句意：这份商业计划书看起来很专业。" },
+                { id: 11, q: "He <u>applied</u> to work in another school.", options: ["A. 渴望", "B. 恳求", "C. 呼吁", "D. 申请"], ans: "D", exp: "<span class='analysis-label'>解析</span>apply：申请。句意：他申请到另一所学校工作。" },
+                { id: 12, q: "The rubbish must be <u>removed</u> to keep the classroom tidy.", options: ["A. 焚烧", "B. 掩埋", "C. 清除", "D. 分类"], ans: "C", exp: "<span class='analysis-label'>解析</span>remove：清除，移走。句意：垃圾必须清除以保持教室整洁。" },
+                { id: 13, q: "They had an accident on the road and didn't <u>check in</u> at their hotel until midnight.", options: ["A. 认领行李", "B. 登记入住", "C. 抵达", "D. 通知"], ans: "B", exp: "<span class='analysis-label'>解析</span>check in：登记入住。句意：他们在路上出了事故，直到半夜才在旅馆登记入住。" },
+                { id: 14, q: "Truth is what we have been <u>seeking</u> all our life.", options: ["A. 追求", "B. 认同", "C. 检验", "D. 传播"], ans: "A", exp: "<span class='analysis-label'>解析</span>seek：寻找，追求。句意：真理是我们一生所追求的东西。" },
+                { id: 15, q: "The failure was an unexpected <u>blow</u> to him.", options: ["A. 机会", "B. 打击", "C. 教训", "D. 变故"], ans: "B", exp: "<span class='analysis-label'>解析</span>blow：打击。句意：这次失败对他是一个意外的打击。" }
+            ]
+        },
+        {
+            id: 'part3',
+            title: "III. 完形填空",
+            type: 'split_choice',
+            desc: "阅读短文，从每题所给的四个选项中选出最佳选项。(故事背景：野牛与老鼠的决斗)",
+            paragraphs: [
+                { en: "When Mouse was out gathering food for the winter, Buffalo came down to eat the grass. The little mouse did not [16] this, for he knew that Buffalo would eat all the long [17] and there would be no place for him to [18].", cn: "【译文】当老鼠正外出为冬天收集食物时，野牛下来吃草。小老鼠不喜欢[16](like)这样，因为他知道野牛会吃掉所有的长[17]草(grasses)，让他无处[18]躲藏(hide)。" },
+                { en: "He made up his mind to [19] Buffalo. \"Hi, Buffalo, I challenge you to a fight!\" he cried in an angry [20]. Buffalo looked at him and replied, \"You'd better [21], little one, or I shall step on you and there will be nothing left!\"", cn: "【译文】他决心与野牛[19]决斗(fight)。“嘿，野牛，我要向你挑战！”他用愤怒的[20]声音(voice)喊道。野牛看着他回答说：“你最好[21]闭嘴(shut up)，小家伙，否则我会一脚踩在你身上，让你灰飞烟灭！”" },
+                { en: "But Mouse [22] repeated the challenge. Buffalo rushed toward Mouse and stepped on him [23]. Then he looked down. To his [24], he could not find Mouse anywhere.", cn: "【译文】但老鼠[22]愤怒地(angrily)重复了挑战。野牛冲向老鼠，[23]重重地(heavily)踩了下去。然后他往下看，令他[24]惊讶(surprise)的是，到处都找不到老鼠。" },
+                { en: "Just then he felt a pain inside his right [25]. He shook his head as hard as he could, and ran here and there wildly. But the [26] went deeper and deeper until at last he fell to the ground and lay [27].", cn: "【译文】就在那时，他感到右[25]耳(ear)内一阵剧痛。他拼命摇头，四处狂奔。但[26]疼痛(pain)越来越深，最后他倒在地上，[27]一动不动(still)。" },
+                { en: "Mouse came out of his ear, and stood proudly upon his body. \"Eho!\" he shouted loudly, \"I have [28] the greatest animal of all!\" In another part of the grassland, the hungry Red Fox [29] the shout. He ran as fast as he could in the direction of the shout. Soon he came upon the huge body of Buffalo with the little mouse still [30] upon it. Fox jumped upon Mouse, who gave one last cry and disappeared.", cn: "【译文】老鼠从他耳朵里钻出来，骄傲地站在他的尸体上。“哦嗬！”他大声喊道，“我[28]打败(defeat)了所有动物中最伟大的一个！”在草原的另一边，饥饿的红狐狸[29]听到(heard)了喊声。他朝着喊声的方向拼命跑去。很快，他发现了野牛巨大的尸体，小老鼠还[30]站(standing)在上面。狐狸扑向老鼠，老鼠发出最后一声哀鸣后消失了。" }
+            ],
+            questions: [
+                { id: 16, options: ["A. see", "B. hear", "C. feel", "D. like"], ans: "D", exp: "<span class='analysis-label'>解析</span>老鼠不喜欢野牛来吃草。" },
+                { id: 17, options: ["A. trees", "B. flowers", "C. grasses", "D. roads"], ans: "C", exp: "<span class='analysis-label'>解析</span>野牛会吃光长草。" },
+                { id: 18, options: ["A. hide", "B. play", "C. sleep", "D. eat"], ans: "A", exp: "<span class='analysis-label'>解析</span>草没了，老鼠就没地方躲藏。" },
+                { id: 19, options: ["A. help", "B. kill", "C. fight", "D. eat"], ans: "C", exp: "<span class='analysis-label'>解析</span>根据后文，老鼠决定向野牛挑战(fight)。" },
+                { id: 20, options: ["A. way", "B. voice", "C. face", "D. mood"], ans: "B", exp: "<span class='analysis-label'>解析</span>老鼠用愤怒的声音大喊。" },
+                { id: 21, options: ["A. shut up", "B. stand up", "C. wake up", "D. hurry up"], ans: "A", exp: "<span class='analysis-label'>解析</span>野牛让老鼠闭嘴。" },
+                { id: 22, options: ["A. happily", "B. sadly", "C. slowly", "D. angrily"], ans: "D", exp: "<span class='analysis-label'>解析</span>老鼠生气地重复挑战。" },
+                { id: 23, options: ["A. lightly", "B. heavily", "C. quickly", "D. slowly"], ans: "B", exp: "<span class='analysis-label'>解析</span>野牛重重地踩在老鼠身上。" },
+                { id: 24, options: ["A. joy", "B. sadness", "C. surprise", "D. anger"], ans: "C", exp: "<span class='analysis-label'>解析</span>令野牛惊讶的是找不到老鼠。" },
+                { id: 25, options: ["A. eye", "B. ear", "C. nose", "D. mouth"], ans: "B", exp: "<span class='analysis-label'>解析</span>老鼠钻进了野牛的耳朵。" },
+                { id: 26, options: ["A. mouse", "B. buffalo", "C. noise", "D. pain"], ans: "D", exp: "<span class='analysis-label'>解析</span>野牛耳朵里的疼痛越来越深。" },
+                { id: 27, options: ["A. still", "B. awake", "C. asleep", "D. alive"], ans: "A", exp: "<span class='analysis-label'>解析</span>野牛倒在地上纹丝不动(still)。" },
+                { id: 28, options: ["A. killed", "B. hit", "C. defeat", "D. eaten"], ans: "C", exp: "<span class='analysis-label'>解析</span>老鼠宣称战胜(defeat)了最强大的动物。" },
+                { id: 29, options: ["A. heard", "B. saw", "C. smelt", "D. felt"], ans: "A", exp: "<span class='analysis-label'>解析</span>红狐狸听到了叫喊声。" },
+                { id: 30, options: ["A. sitting", "B. lying", "C. sleeping", "D. standing"], ans: "D", exp: "<span class='analysis-label'>解析</span>老鼠还站在野牛尸体上。" }
+            ]
+        },
+        {
+            id: 'part5',
+            title: "V. 语法填空",
+            type: 'split_input',
+            desc: "阅读下面短文，在空格处填入适当的词。(故事背景：Cara参加赛跑)",
+            paragraphs: [
+                { en: "Cara was nervous before the race. For several weeks, she had been training every day to prepare for it. [46] ______ (final) the race day came. [47] ______ she arrived, her coach was already on the track.", cn: "【译文】卡拉在赛前很紧张。为了准备比赛，她已经连续几周每天训练。[46]最终(Finally)，比赛那天到了。[47]当(When)她到达时，她的教练已经站在跑道上了。" },
+                { en: "Cara started her warm-up exercise under the guidance of the coach. This was helpful to keep [48] ______ (she) from getting hurt. Cara's friends got there [49] ______ (early) than her. They let her know that they were there [50] ______ (cheer) for her.", cn: "【译文】卡拉在教练的指导下开始做热身运动，这有助于防止[48]她(her)受伤。卡拉的朋友们比她到得[49]早(earlier)。他们让她知道他们是来为她[50]加油(to cheer)的。" },
+                { en: "They all wished her good luck. It was time for the race. All the runners [51] ______ (call) to line up on the tracks. [52] ______ (hear) the signal gun, Cara jump-started from the ground. She began to run as hard as she could.", cn: "【译文】他们都祝她好运。比赛时间到了，所有的运动员都[51]被叫(were called)到跑道上排队。[52]听到(Hearing)发令枪声，卡拉迅速起跑。她开始拼命奔跑。" },
+                { en: "Running past the stands, she heard the voices of her friends cheering her name. Cara kept her energy and continued to keep a good speed. When she rounded the track [53] ______ the last time, she and another runner were neck and neck for [54] ______ finish line.", cn: "【译文】跑过看台时，她听到朋友们欢呼她的名字。卡拉保持着体力并继续保持良好的速度。当她最后[53]一次(for)绕过跑道时，她和另一名选手不分上下地冲向[54]终点线(the)。" },
+                { en: "As the end approached, Cara put all her effort into those last few [55] ______ (foot). She won the race narrowly. Cara was so happy.", cn: "【译文】随着终点的临近，卡拉在最后几[55]英尺(feet)使出了全身力气。她以微弱优势赢得了比赛，卡拉非常开心。" }
+            ],
+            questions: [
+                { id: 46, ans: "Finally", exp: "<span class='analysis-label'>解析</span>副词修饰全句：最终，比赛日到了。" },
+                { id: 47, ans: "When", exp: "<span class='analysis-label'>解析</span>连词：当她到达时，教练已在跑道上。" },
+                { id: 48, ans: "her", exp: "<span class='analysis-label'>解析</span>宾格代词：keep her from getting hurt 防止她受伤。" },
+                { id: 49, ans: "earlier", exp: "<span class='analysis-label'>解析</span>比较级：than是标志，朋友比她到得早。" },
+                { id: 50, ans: "to cheer", exp: "<span class='analysis-label'>解析</span>不定式表目的：他们在那儿是为了去为她加油。" },
+                { id: 51, ans: "were called", exp: "<span class='analysis-label'>解析</span>被动语态：所有的跑步者都被叫去排队。" },
+                { id: 52, ans: "Hearing", exp: "<span class='analysis-label'>解析</span>现在分词作状语：听到发令枪响，卡拉跳起出发。" },
+                { id: 53, ans: "for", exp: "<span class='analysis-label'>解析</span>固定搭配：for the last time 最后一次。" },
+                { id: 54, ans: "the", exp: "<span class='analysis-label'>解析</span>定冠词：特指终点线。" },
+                { id: 55, ans: "feet", exp: "<span class='analysis-label'>解析</span>复数：few后面接名词复数（英尺）。" }
+            ]
+        },
+        {
+            id: 'part6',
+            title: "VI. 完成句子",
+            type: 'input_sentence',
+            desc: "根据所给汉语提示，完成英语句子。<b>填写后点击右侧【确认】按钮。</b>",
+            questions: [
+                { id: 56, q: "56. The film ______ (我昨天看的电影) is very interesting.", ans: "that I watched yesterday", exp: "<span class='analysis-label'>解析与翻译</span>【句意】我昨天看的电影非常有趣。<br>【解析】考查定语从句，从句放在先行词film之后。" },
+                { id: 57, q: "57. Believe it or not, ______ (本周我将步行上班).", ans: "I will go to work on foot this week", exp: "<span class='analysis-label'>解析与翻译</span>【句意】你可能不相信，本周我将步行上班。<br>【解析】考查宾语从句及固定短语on foot。" },
+                { id: 58, q: "58. What they are doing ______ (跟我没有多大关系).", ans: "is none of my business", exp: "<span class='analysis-label'>解析与翻译</span>【句意】他们正在做的事情跟我没有多大关系。<br>【解析】考查短语has nothing to do with me 或 is none of my business。" },
+                { id: 59, q: "59. She is going to spend her summer holiday in Qingdao, ______ (那儿她有一些亲戚).", ans: "where she has some relatives", exp: "<span class='analysis-label'>解析与翻译</span>【句意】她打算去青岛度暑假，在那儿她有一些亲戚。<br>【解析】考查非限制性定语从句，where指代Qingdao。" },
+                { id: 60, q: "60. Li Ming is ______ (和我一样高).", ans: "as tall as me", exp: "<span class='analysis-label'>解析与翻译</span>【句意】李明和我一样高。<br>【解析】考查同级比较结构as...as...。" }
+            ]
+        },
+        {
+            id: 'part7',
+            title: "VII. 应用写作",
+            type: 'writing',
+            desc: "请在下方文本框中输入作文。<b>点击输入框查看参考范文。</b>",
+            questions: [
+                { id: 61, q: "61. 你是李华，下周日是你的生日，请写信邀请外教Robert参加聚会。内容包括：1. 聚会时间（下周日晚6点到11点）；2. 地点（李华家）；3. 参加人员（全班师生）。（约40词）", ans: "Dear Robert,\nHow is it going? I'm Li Hua. I'm writing to invite you to my birthday party. It will be held in my house from 6:00 p.m. to 11:00 p.m. next Sunday. All the teachers and students in our class will be invited. Please let me know if you can accept my invitation as soon as possible. I'm sure you will have a good time there.\nYours,\nLi Hua", exp: "<span class='analysis-label'>参考范文翻译</span><br>亲爱的罗伯特：<br>近来好吗？我是李华。我写这封信是想邀请你参加我的生日聚会。聚会将于下周日晚6点到11点在我家举行。我们班所有的老师和同学都会被邀请。如果你能接受我的邀请，请尽快告知我。我相信你会在那里度过愉快的时光。<br>你的，李华" }
+            ]
+        }
+    ];
+
+    // ===============================================
+    // 逻辑控制 (核心)
+    // ===============================================
+    let userResponses = {}; 
+    let isRetryMode = false;
+    let correctIds = new Set(); 
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        if (sidebar.classList.contains('active-mobile')) {
+            sidebar.classList.remove('active-mobile');
+            overlay.style.display = 'none';
+        } else {
+            sidebar.classList.add('active-mobile');
+            overlay.style.display = 'block';
+        }
+    }
+
+    function login() {
+        const cls = document.getElementById('u-class').value;
+        const name = document.getElementById('u-name').value;
+        if (!cls || !name) return alert("请输入班级和姓名");
+        
+        document.getElementById('disp-name').innerText = name;
+        document.getElementById('disp-id').innerText = cls + "班";
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('main-area').style.display = 'block';
+        
+        initMenu();
+        showSection(0);
+    }
+
+    function initMenu() {
+        const container = document.getElementById('menu-container');
+        container.innerHTML = '';
+        examData.forEach((part, index) => {
+            const item = document.createElement('div');
+            item.className = 'menu-item';
+            item.innerHTML = part.title;
+            item.onclick = () => {
+                showSection(index);
+                if(window.innerWidth <= 768) toggleSidebar();
+            };
+            container.appendChild(item);
+        });
+    }
+
+    function showSection(index) {
+        const container = document.getElementById('content-container');
+        container.innerHTML = ''; 
+        document.querySelectorAll('.menu-item').forEach((el, i) => {
+            el.classList.toggle('active', i === index);
+        });
+        const data = examData[index];
+        const title = document.createElement('h2');
+        title.innerHTML = data.title + (isRetryMode ? " <span style='color:red;font-size:0.6em'>(错题重练)</span>" : "");
+        container.appendChild(title);
+        if(data.desc) {
+            const desc = document.createElement('p');
+            desc.innerHTML = data.desc; desc.style.color = '#666'; container.appendChild(desc);
+        }
+        if (data.type === 'choice') renderChoice(data, container);
+        else if (data.type === 'split_choice') renderSplitChoice(data, container);
+        else if (data.type === 'split_input') renderSplitInput(data, container);
+        else if (data.type === 'input_sentence') renderInputSentence(data, container);
+        else if (data.type === 'writing') renderWriting(data, container);
+    }
+
+    function shouldRenderQuestion(qid) {
+        if (!isRetryMode) return true;
+        return !correctIds.has(qid); 
+    }
+
+    window.toggleTrans = function(id) {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('btn-' + id);
+        if (el.style.display === 'block') { el.style.display = 'none'; btn.innerHTML = '查看翻译'; } 
+        else { el.style.display = 'block'; btn.innerHTML = '收起翻译'; }
+    };
+
+    function escapeQuote(str) {
+        return str.replace(/'/g, "\\'");
+    }
+
+    function renderChoice(data, container) {
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let html = `<div class="q-title">${q.id}. ${q.q}</div><div class="options-group">`;
+            q.options.forEach(opt => {
+                html += `<button class="option-btn" onclick="checkChoice(this, ${q.id}, '${escapeQuote(opt)}', '${escapeQuote(q.ans)}')">${opt}</button>`;
+            });
+            html += `</div><div class="analysis-box" id="exp-${q.id}">${q.exp}</div>`;
+            card.innerHTML = html;
+            container.appendChild(card);
+            if (userResponses[q.id]) restoreChoiceState(card, q.id, q.ans);
+        });
+    }
+
+    function renderSplitChoice(data, container) {
+        const wrap = document.createElement('div'); wrap.className = 'split-layout';
+        const left = document.createElement('div'); left.className = 'passage-panel';
+        data.paragraphs.forEach((p, idx) => {
+            const transId = `p-trans-${idx}`;
+            left.innerHTML += `<p>${p.en}</p><span id="btn-${transId}" class="trans-toggle-btn" onclick="toggleTrans('${transId}')">查看翻译</span><div id="${transId}" class="para-trans">${p.cn}</div><hr style="border:0; border-top:1px dashed #eee; margin:15px 0;">`;
+        });
+        const right = document.createElement('div'); right.className = 'questions-panel';
+        renderChoice({questions: data.questions}, right);
+        wrap.appendChild(left); wrap.appendChild(right); container.appendChild(wrap);
+    }
+
+    function renderSplitInput(data, container) {
+        const wrap = document.createElement('div'); wrap.className = 'split-layout';
+        const left = document.createElement('div'); left.className = 'passage-panel';
+        data.paragraphs.forEach((p, idx) => {
+            let processedEn = p.en.replace(/\[(\d+)\]\s*______/g, (match, id) => {
+                if (isRetryMode && correctIds.has(parseInt(id))) {
+                    const ans = data.questions.find(q => q.id == id).ans;
+                    return `[${id}] <strong style="color:green; border-bottom:1px solid green;">${ans}</strong>`;
+                }
+                return `[${id}] <input type="text" class="inline-input" id="input-${id}" autocomplete="off">`;
+            });
+            const transId = `p-gram-trans-${idx}`;
+            left.innerHTML += `<p>${processedEn}</p><span id="btn-${transId}" class="trans-toggle-btn" onclick="toggleTrans('${transId}')">查看翻译</span><div id="${transId}" class="para-trans">${p.cn}</div><hr style="border:0; border-top:1px dashed #eee; margin:15px 0;">`;
+        });
+        const right = document.createElement('div'); right.className = 'questions-panel';
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+            const card = document.createElement('div'); card.className = 'question-card';
+            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><strong>第 ${q.id} 题</strong><button class="check-btn" onclick="checkInput(${q.id}, '${escapeQuote(q.ans)}')">确认</button></div><div class="analysis-box" id="exp-${q.id}"><strong>正确答案：</strong> ${q.ans}<br>${q.exp}</div>`;
+            right.appendChild(card);
+        });
+        wrap.appendChild(left); wrap.appendChild(right); container.appendChild(wrap);
+        setTimeout(() => restoreInputState(data.questions), 100);
+    }
+
+    function renderInputSentence(data, container) {
+        data.questions.forEach(q => {
+            if (!shouldRenderQuestion(q.id)) return;
+            const card = document.createElement('div'); card.className = 'question-card';
+            const qHtml = q.q.replace('______', `<input type="text" class="inline-input" id="input-${q.id}" style="width:250px" autocomplete="off">`);
+            card.innerHTML = `<div class="q-title">${qHtml}</div><div style="margin-top:15px;"><button class="check-btn" onclick="checkInput(${q.id}, '${escapeQuote(q.ans)}')">确认</button></div><div class="analysis-box" id="exp-${q.id}"><strong>参考答案：</strong> ${q.ans}<br>${q.exp}</div>`;
+            container.appendChild(card);
+        });
+        setTimeout(() => restoreInputState(data.questions), 100);
+    }
+
+    function renderWriting(data, container) {
+        data.questions.forEach(q => {
+            const card = document.createElement('div'); card.className = 'question-card';
+            card.innerHTML = `<div class="q-title">${q.q}</div><textarea id="input-${q.id}" placeholder="请在此处作答...点击输入框查看参考范文"></textarea><div class="analysis-box" id="exp-${q.id}"><strong>参考范文：</strong><pre style="white-space: pre-wrap; font-family:inherit; color:#555;">${q.ans}</pre><br>${q.exp}</div>`;
+            container.appendChild(card);
+            
+            setTimeout(() => {
+                const area = document.getElementById(`input-${q.id}`);
+                const exp = document.getElementById(`exp-${q.id}`);
+                area.addEventListener('focus', function() {
+                    exp.style.display = 'block';
+                    userResponses[q.id] = { type: 'writing', userVal: area.value, isCorrect: true };
+                });
+                if (userResponses[q.id]) { 
+                    area.value = userResponses[q.id].userVal; 
+                    exp.style.display = 'block'; 
+                }
+            }, 0);
+        });
+    }
+
+    window.checkChoice = function(btn, id, optStr, ansStr) {
+        const parent = btn.parentElement; const allBtns = parent.querySelectorAll('button');
+        const expDiv = document.getElementById(`exp-${id}`);
+        allBtns.forEach(b => b.disabled = true);
+        const isCorrect = optStr.startsWith(ansStr);
+        if (isCorrect) { btn.classList.add('correct'); correctIds.add(id); } 
+        else { btn.classList.add('wrong'); correctIds.delete(id); allBtns.forEach(b => { if(b.innerText.startsWith(ansStr)) b.classList.add('correct'); }); }
+        expDiv.style.display = 'block';
+        userResponses[id] = { type: 'choice', userChoice: optStr.charAt(0), isCorrect: isCorrect, ans: ansStr };
+    };
+
+    function restoreChoiceState(card, id, ansStr) {
+        const btns = card.querySelectorAll('.option-btn');
+        const exp = card.querySelector('.analysis-box');
+        const userChoice = userResponses[id].userChoice;
+        btns.forEach(btn => {
+            btn.disabled = true;
+            if(btn.innerText.startsWith(ansStr)) btn.classList.add('correct');
+            if(btn.innerText.startsWith(userChoice) && !btn.innerText.startsWith(ansStr)) btn.classList.add('wrong');
+        });
+        exp.style.display = 'block';
+    }
+
+    window.checkInput = function(id, correctAns) {
+        const input = document.getElementById(`input-${id}`);
+        const expDiv = document.getElementById(`exp-${id}`);
+        if(!input) return;
+        const userVal = input.value.trim();
+        if (!userVal) return alert("请先填写答案！");
+        // 宽松匹配：忽略大小写和标点
+        const cleanUser = userVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanAns = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // 包含判断或全等，允许短单词
+        let isCorrect = (cleanUser === cleanAns) || (cleanAns.includes(cleanUser) && cleanUser.length > 3);
+        
+        if (isCorrect) { input.classList.add('correct'); correctIds.add(id); } 
+        else { input.classList.add('wrong'); correctIds.delete(id); }
+        input.disabled = true; expDiv.style.display = 'block';
+        userResponses[id] = { type: 'input', userVal: userVal, isCorrect: isCorrect };
+    };
+
+    function restoreInputState(questions) {
+        questions.forEach(q => {
+            if (shouldRenderQuestion(q.id) && userResponses[q.id]) {
+                const input = document.getElementById(`input-${q.id}`);
+                const exp = document.getElementById(`exp-${q.id}`);
+                if (input && exp) {
+                    input.value = userResponses[q.id].userVal;
+                    input.disabled = true;
+                    exp.style.display = 'block';
+                    input.classList.add(userResponses[q.id].isCorrect ? 'correct' : 'wrong');
+                }
+            }
+        });
+    }
+
+    window.submitExam = function() {
+        let score = 0;
+        Object.values(userResponses).forEach(r => {
+            if (r.type === 'writing') score += 15; 
+            else if (r.isCorrect) score += (r.type === 'choice' ? 2 : 3);
+        });
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('result-modal').style.display = 'flex';
+    };
+
+    window.retryWrongMode = function() {
+        isRetryMode = true;
+        document.getElementById('result-modal').style.display = 'none';
+        for (let key in userResponses) {
+            if (!userResponses[key].isCorrect && userResponses[key].type !== 'writing') {
+                delete userResponses[key];
+            }
+        }
+        alert("已进入【错题重练】模式，做对的题目已自动隐藏。");
+        const activeItem = document.querySelector('.menu-item.active');
+        if(activeItem) activeItem.click(); else showSection(0);
+    };
+
+</script>
+</body>
+</html>
